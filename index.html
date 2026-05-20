@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Logística Monserrate</title>
+  <title>Logística Monserrate - En Vivo</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,7 +16,7 @@
     :root {
       --color-primary: #5c246f;
       --color-primary-dark: #3a1347;
-      --color-accent: #d4af37; /* Dorado */
+      --color-accent: #d4af37;
       --color-bg-light: #f5f2f7;
       --color-card: rgba(255, 255, 255, 0.94);
       --color-text-main: #2b1d33;
@@ -23,530 +24,113 @@
       --border-radius: 14px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
     body {
       background: #200b2b url('https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&q=80&w=1000') no-repeat center center fixed;
-      background-size: cover;
-      color: var(--color-text-main);
-      min-height: 100vh;
-      padding-bottom: 30px;
+      background-size: cover; color: var(--color-text-main); min-height: 100vh; padding-bottom: 30px;
     }
-
-    /* Capa oscura para dar legibilidad sobre la imagen de Monserrate */
-    .overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(135deg, rgba(62, 19, 77, 0.92) 0%, rgba(26, 6, 33, 0.96) 100%);
-      z-index: 1;
-    }
-
-    .app-container {
-      position: relative;
-      z-index: 2;
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    /* Encabezado */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      padding: 4px;
-    }
-
-    .title-area {
-      color: #ffffff;
-    }
-
-    .title {
-      font-size: 22px;
-      font-weight: 600;
-      letter-spacing: -0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(62, 19, 77, 0.92) 0%, rgba(26, 6, 33, 0.96) 100%); z-index: 1; }
+    .app-container { position: relative; z-index: 2; max-width: 480px; margin: 0 auto; padding: 16px; }
     
-    .title i {
-      color: var(--color-accent);
+    /* Estado de Carga Sincronizada */
+    .sync-badge {
+      background: rgba(13, 122, 87, 0.2); color: #87f5d0; border: 1px solid #0d7a57;
+      font-size: 11px; padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px;
     }
+    .sync-badge.loading { background: rgba(234, 179, 8, 0.2); color: #fef08a; border: 1px solid #ca8a04; }
 
-    .subtitle {
-      font-size: 13px;
-      color: #cfc2d8;
-      margin-top: 2px;
-    }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 4px; }
+    .title-area { color: #ffffff; }
+    .title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+    .title i { color: var(--color-accent); }
+    .subtitle { font-size: 13px; color: #cfc2d8; margin-top: 2px; }
 
-    /* Tarjetas de Estadísticas */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .stat-card {
-      background: var(--color-card);
-      border-radius: var(--border-radius);
-      padding: 12px 6px;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .stat-num {
-      font-size: 20px;
-      font-weight: 600;
-    }
-    
-    .stat-label {
-      font-size: 10px;
-      color: var(--color-text-sec);
-      font-weight: 500;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-card { background: var(--color-card); border-radius: var(--border-radius); padding: 12px 6px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
+    .stat-num { font-size: 20px; font-weight: 600; }
+    .stat-label { font-size: 10px; color: var(--color-text-sec); font-weight: 500; text-transform: uppercase; margin-top: 2px; }
     .n-total { color: var(--color-primary-dark); }
     .n-avail { color: #0d7a57; }
     .n-paid { color: #3e7d07; }
     .n-abono { color: #1a62a6; }
 
-    /* Navegación por pestañas estilo App */
-    .tabs-nav {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: rgba(255, 255, 255, 0.15);
-      padding: 4px;
-      border-radius: 30px;
-      margin-bottom: 16px;
-      backdrop-filter: blur(10px);
-    }
+    .tabs-nav { display: grid; grid-template-columns: 1fr 1fr; background: rgba(255, 255, 255, 0.15); padding: 4px; border-radius: 30px; margin-bottom: 16px; backdrop-filter: blur(10px); }
+    .tab-btn { padding: 10px; border: none; background: none; color: #ffffff; font-size: 14px; font-weight: 500; border-radius: 25px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; }
+    .tab-btn.active { background: var(--color-card); color: var(--color-primary-dark); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-    .tab-btn {
-      padding: 10px;
-      border: none;
-      background: none;
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 500;
-      border-radius: 25px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: var(--color-card);
-      color: var(--color-primary-dark);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    /* El Bus */
-    .bus-container {
-      background: var(--color-card);
-      border-radius: 24px;
-      padding: 20px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .driver-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--color-bg-light);
-      padding: 10px 14px;
-      border-radius: var(--border-radius);
-      margin-bottom: 14px;
-      border: 1px solid #e2dae8;
-    }
-
-    .driver-info {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--color-primary-dark);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .aisle-text {
-      text-align: center;
-      font-size: 11px;
-      color: var(--color-text-sec);
-      font-weight: 500;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
-    }
-
-    .bus-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .bus-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 24px 1fr 1fr;
-      gap: 5px;
-      align-items: center;
-    }
-
-    .aisle-space {
-      background: transparent;
-    }
-
+    .bus-container { background: var(--color-card); border-radius: 24px; padding: 20px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); }
+    .driver-row { display: flex; justify-content: space-between; align-items: center; background: var(--color-bg-light); padding: 10px 14px; border-radius: var(--border-radius); margin-bottom: 14px; border: 1px solid #e2dae8; }
+    .driver-info { font-size: 12px; font-weight: 500; color: var(--color-primary-dark); display: flex; align-items: center; gap: 6px; }
+    .aisle-text { text-align: center; font-size: 11px; color: var(--color-text-sec); font-weight: 500; margin-bottom: 12px; letter-spacing: 1px; }
+    
+    .bus-grid { display: flex; flex-direction: column; gap: 6px; }
+    .bus-row { display: grid; grid-template-columns: 1fr 1fr 24px 1fr 1fr; gap: 5px; align-items: center; }
+    .aisle-space { background: transparent; }
+    
     .seat {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 8px;
-      border: 1px solid #d4cbdc;
-      background: #ffffff;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-text-main);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05);
+      width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid #d4cbdc; background: #ffffff;
+      font-size: 11px; font-weight: 600; color: var(--color-text-main); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; position: relative; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05);
     }
+    .seat .sname { font-size: 8px; font-weight: 400; max-width: 42px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 1px; }
 
-    .seat .sname {
-      font-size: 8px;
-      font-weight: 400;
-      max-width: 42px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      margin-top: 1px;
-    }
+    .seat.s-free { background: #ffffff; border-color: #cbd5e1; }
+    .seat.s-paid { background: #e6f4ea; border-color: #34a853; color: #137333; }
+    .seat.s-abono { background: #e8f0fe; border-color: #1a73e8; color: #174ea6; }
+    .seat.s-taken { background: #f1f3f4; border-color: #dadce0; color: #5f6368; }
 
-    /* Estados de los Puestos */
-    .seat.s-free {
-      background: #ffffff;
-      border-color: #cbd5e1;
-    }
-    .seat.s-paid {
-      background: #e6f4ea;
-      border-color: #34a853;
-      color: #137333;
-    }
-    .seat.s-abono {
-      background: #e8f0fe;
-      border-color: #1a73e8;
-      color: #174ea6;
-    }
-    .seat.s-taken {
-      background: #f1f3f4;
-      border-color: #dadce0;
-      color: #5f6368;
-    }
+    .back-row-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 6px; }
+    
+    .legend-box { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; background: rgba(255,255,255,0.08); padding: 10px; border-radius: 12px; }
+    .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #ffffff; }
+    .leg-dot { width: 12px; height: 12px; border-radius: 3px; }
 
-    .back-row-5 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-      gap: 5px;
-      margin-top: 6px;
-    }
-
-    /* Leyenda */
-    .legend-box {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-      background: rgba(255,255,255,0.08);
-      padding: 10px;
-      border-radius: 12px;
-    }
-
-    .leg-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      color: #ffffff;
-    }
-
-    .leg-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-    }
-
-    /* Sección Lista de Pasajeros */
-    .list-box {
-      background: var(--color-card);
-      border-radius: 24px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .list-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .list-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--color-primary-dark);
-    }
-
-    .btn-action {
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: 8px;
-      border: 1px solid #d4cbdc;
-      background: #ffffff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--color-text-main);
-    }
-
+    .list-box { background: var(--color-card); border-radius: 24px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .list-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .list-title { font-size: 16px; font-weight: 600; color: var(--color-primary-dark); }
+    .btn-action { padding: 8px 12px; font-size: 12px; font-weight: 500; border-radius: 8px; border: 1px solid #d4cbdc; background: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--color-text-main); }
     .btn-action:active { background: #f5f2f7; }
 
-    .filters-row {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-    }
+    .filters-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .filter-chip { padding: 6px 14px; font-size: 12px; border-radius: 20px; border: 1px solid #d4cbdc; background: #ffffff; white-space: nowrap; color: var(--color-text-sec); }
+    .filter-chip.active { background: var(--color-primary); color: #ffffff; border-color: var(--color-primary); }
 
-    .filter-chip {
-      padding: 6px 14px;
-      font-size: 12px;
-      border-radius: 20px;
-      border: 1px solid #d4cbdc;
-      background: #ffffff;
-      white-space: nowrap;
-      color: var(--color-text-sec);
-    }
+    .p-list { display: flex; flex-direction: column; gap: 8px; }
+    .p-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #e8e3ed; }
+    .p-order-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--color-bg-light); color: var(--color-primary); font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2dae8; }
+    .p-main-info { flex: 1; }
+    .p-row1 { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .p-row2 { font-size: 11px; color: var(--color-text-sec); margin-top: 1px; }
 
-    .filter-chip.active {
-      background: var(--color-primary);
-      color: #ffffff;
-      border-color: var(--color-primary);
-    }
-
-    .p-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .p-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: #ffffff;
-      border-radius: 12px;
-      border: 1px solid #e8e3ed;
-    }
-
-    .p-order-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--color-bg-light);
-      color: var(--color-primary);
-      font-weight: 600;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #e2dae8;
-    }
-
-    .p-main-info {
-      flex: 1;
-    }
-
-    .p-row1 {
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .p-row2 {
-      font-size: 11px;
-      color: var(--color-text-sec);
-      margin-top: 1px;
-    }
-
-    .badge-status {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
+    .badge-status { font-size: 9px; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
     .bs-paid { background: #e6f4ea; color: #137333; }
     .bs-abono { background: #e8f0fe; color: #174ea6; }
     .bs-none { background: #f1f3f4; color: #5f6368; }
 
-    /* Modal / Formulario */
-    .modal-mask {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      backdrop-filter: blur(4px);
-    }
+    .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+    .modal-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); animation: zoomUp 0.2s ease-out; }
+    @keyframes zoomUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    .modal-box {
-      background: #ffffff;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 360px;
-      padding: 20px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-      animation: zoomUp 0.2s ease-out;
-    }
+    .m-title { font-size: 18px; font-weight: 600; color: var(--color-primary-dark); }
+    .m-sub { font-size: 12px; color: var(--color-text-sec); margin-bottom: 14px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--color-text-main); margin-bottom: 4px; }
+    .form-group input { width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; }
+    .form-group input:focus { border-color: var(--color-primary); }
 
-    @keyframes zoomUp {
-      from { transform: scale(0.9); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .m-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--color-primary-dark);
-    }
-
-    .m-sub {
-      font-size: 12px;
-      color: var(--color-text-sec);
-      margin-bottom: 14px;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--color-text-main);
-      margin-bottom: 4px;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      outline: none;
-    }
-
-    .form-group input:focus {
-      border-color: var(--color-primary);
-    }
-
-    .pay-selector {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-    }
-
-    .pay-btn {
-      padding: 8px 4px;
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      text-align: center;
-      cursor: pointer;
-      color: var(--color-text-sec);
-    }
-
+    .pay-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .pay-btn { padding: 8px 4px; font-size: 12px; font-weight: 500; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; text-align: center; cursor: pointer; color: var(--color-text-sec); }
     .pay-btn.selected.p-none { background: #f1f3f4; border-color: #9aa0a6; color: #3c4043; font-weight:600; }
     .pay-btn.selected.p-paid { background: #e6f4ea; border-color: #34a853; color: #137333; font-weight:600; }
     .pay-btn.selected.p-abono { background: #e8f0fe; border-color: #1a73e8; color: #174ea6; font-weight:600; }
 
-    .m-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .btn-main {
-      padding: 11px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      text-align: center;
-    }
-
+    .m-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .btn-main { padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; text-align: center; }
     .btn-main.primary { background: var(--color-primary); color: #ffffff; }
     .btn-main.secondary { background: #f1f3f4; color: var(--color-text-main); }
     
-    .btn-delete-seat {
-      width: 100%;
-      padding: 10px;
-      background: #fce8e6;
-      color: #c5221f;
-      border: none;
-      border-radius: 10px;
-      margin-top: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .btn-reset-all {
-      background: rgba(255, 232, 230, 0.2);
-      color: #ff9e9b;
-      border: 1px solid rgba(255, 76, 76, 0.4);
-      padding: 6px 10px;
-      font-size: 11px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 30px;
-      color: var(--color-text-sec);
-      font-size: 13px;
-    }
+    .btn-delete-seat { width: 100%; padding: 10px; background: #fce8e6; color: #c5221f; border: none; border-radius: 10px; margin-top: 8px; font-size: 12px; font-weight: 500; cursor: pointer; }
+    .empty-state { text-align: center; padding: 30px; color: var(--color-text-sec); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -560,26 +144,14 @@
         <div class="title"><i class="ti ti-flame"></i> Monserrate 2026</div>
         <div class="subtitle">Bucaramanga → Bogotá · 42 Puestos</div>
       </div>
-      <button class="btn-reset-all" id="btnResetAll"><i class="ti ti-refresh"></i> Reiniciar</button>
+      <div class="sync-badge loading" id="syncStatus"><i class="ti ti-refresh animate-spin"></i> Conectando...</div>
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-num n-total" id="txtTotal">42</div>
-        <div class="stat-label">Total</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num n-avail" id="txtAvail">42</div>
-        <div class="stat-label">Libres</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num n-paid" id="txtPaid">0</div>
-        <div class="stat-label">Pagos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num n-abono" id="txtAbono">0</div>
-        <div class="stat-label">Abonos</div>
-      </div>
+      <div class="stat-card"><div class="stat-num n-total" id="txtTotal">42</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num n-avail" id="txtAvail">42</div><div class="stat-label">Libres</div></div>
+      <div class="stat-card"><div class="stat-num n-paid" id="txtPaid">0</div><div class="stat-label">Pagos</div></div>
+      <div class="stat-card"><div class="stat-num n-abono" id="txtAbono">0</div><div class="stat-label">Abonos</div></div>
     </div>
 
     <div class="tabs-nav">
@@ -594,9 +166,7 @@
           <div class="driver-info" style="color: #9aa0a6;">Puerta <i class="ti ti-door-enter"></i></div>
         </div>
         <div class="aisle-text">← VENTANA | PASILLO | VENTANA →</div>
-        
         <div class="bus-grid" id="busRowsContainer"></div>
-        
         <div class="back-row-5" id="busBackRowContainer"></div>
       </div>
 
@@ -665,34 +235,72 @@
         <button class="btn-main secondary" onclick="closeModal()">Cancelar</button>
         <button class="btn-main primary" id="btnSave" onclick="processSave()">Guardar</button>
       </div>
-      <button class="btn-delete-seat" id="btnDeleteSeat" onclick="processDelete()" style="display:none;"><i class="ti ti-trash"></i> Liberar e Invalidar Puesto</button>
+      <button class="btn-delete-seat" id="btnDeleteSeat" onclick="processDelete()" style="display:none;"><i class="ti ti-trash"></i> Liberar Puesto</button>
     </div>
   </div>
 
   <script>
+    // CREDENCIALES DE CONEXIÓN DE TU PROYECTO SUPABASE
+    const SUPABASE_URL = "https://fagmooucdoevtgvkvmym.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZ21vb3VjZG9ldnRndmt2bXltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNDEzNjEsImV4cCI6MjA5NDgxNzM2MX0.rl_Dh5qB63Ir1vyO0uz75LejEhBwjGeSKO0yE4_ni7w";
+    
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const TOTAL_SEATS = 42;
-    const LOCAL_KEY = 'peregrinos_monserrate_v3';
     
     let db = {}; 
     let currentSeatEditing = null;
     let selectedPayState = 'none';
     let activeFilter = 'all';
 
-    // Cargar información de memoria interna del celular
-    function loadData() {
-      try {
-        const data = localStorage.getItem(LOCAL_KEY);
-        db = data ? JSON.parse(data) : {};
-      } catch(e) {
-        db = {};
+    // Descarga inicial de la base de datos
+    async function fetchAllSeats() {
+      showSyncState(true);
+      const { data, error } = await _supabase.from('peregrinos').select('*');
+      if (error) {
+        console.error("Error cargando base de datos remota:", error);
+        return;
+      }
+      
+      db = {};
+      if (data) {
+        data.forEach(item => {
+          db[item.id] = {
+            name: item.name,
+            cc: item.cc,
+            tel: item.tel,
+            pay: item.pay,
+            monto: item.monto,
+            order: item.order
+          };
+        });
+      }
+      renderBus();
+      updateCounters();
+      if(document.getElementById('view-list').style.display === 'block') renderList();
+      showSyncState(false);
+    }
+
+    // Escucha en tiempo real (si otro edita, se refresca solo en tu cel)
+    function listenRealtime() {
+      _supabase
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'peregrinos' }, () => {
+          fetchAllSeats();
+        })
+        .subscribe();
+    }
+
+    function showSyncState(isLoading) {
+      const b = document.getElementById('syncStatus');
+      if(isLoading) {
+        b.className = "sync-badge loading";
+        b.innerHTML = `<i class="ti ti-refresh animate-spin"></i> Sincronizando...`;
+      } else {
+        b.className = "sync-badge";
+        b.innerHTML = `<i class="ti ti-cloud-check"></i> En Vivo`;
       }
     }
 
-    function saveData() {
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(db));
-    }
-
-    // Detallar textos de ubicación del bus según numeración colombiana estándar
     function getSeatDetails(n) {
       if(n <= 40) {
         const fila = Math.ceil(n / 4);
@@ -721,16 +329,13 @@
       rowsContainer.innerHTML = '';
       backRowContainer.innerHTML = '';
 
-      // Render de las primeras 10 filas de 4 puestos
       for(let f = 1; f <= 10; f++) {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'bus-row';
-        
         const base = (f - 1) * 4;
         const seatNumbers = [base + 1, base + 2, base + 3, base + 4];
 
         seatNumbers.forEach((n, idx) => {
-          // Generar el espacio de pasillo central en el índice 2
           if(idx === 2) {
             const aisle = document.createElement('div');
             aisle.className = 'aisle-space';
@@ -752,14 +357,11 @@
           seatBtn.onclick = () => openModal(n);
           rowDiv.appendChild(seatBtn);
         });
-
         rowsContainer.appendChild(rowDiv);
       }
 
-      // Render de los últimos 2 puestos (41 y 42) atrás
       [41, 42].forEach((n, idx) => {
         if(idx === 1) {
-          // Espaciado simulado para centrar los 2 puestos atrás
           for(let k=0; k<3; k++) {
             const space = document.createElement('div');
             space.className = 'aisle-space';
@@ -777,217 +379,4 @@
         }
 
         seatBtn.className = cssClass;
-        seatBtn.innerHTML = `<span class="snum">${n}</span>${p ? `<span class="sname">${p.name.split(' ')[0]}</span>` : ''}`;
-        seatBtn.onclick = () => openModal(n);
-        backRowContainer.appendChild(seatBtn);
-      });
-    }
-
-    function updateCounters() {
-      const list = Object.values(db);
-      const totalSold = list.length;
-      const totalPaid = list.filter(x => x.pay === 'paid').length;
-      const totalAbono = list.filter(x => x.pay === 'abono').length;
-
-      document.getElementById('txtAvail').textContent = TOTAL_SEATS - totalSold;
-      document.getElementById('txtPaid').textContent = totalPaid;
-      document.getElementById('txtAbono').textContent = totalAbono;
-    }
-
-    function changeTab(tab) {
-      document.getElementById('view-bus').style.display = tab === 'bus' ? 'block' : 'none';
-      document.getElementById('view-list').style.display = tab === 'list' ? 'block' : 'none';
-      
-      document.getElementById('btn-tab-bus').className = `tab-btn ${tab === 'bus' ? 'active' : ''}`;
-      document.getElementById('btn-tab-list').className = `tab-btn ${tab === 'list' ? 'active' : ''}`;
-
-      if(tab === 'list') renderList();
-    }
-
-    function openModal(seatNum) {
-      currentSeatEditing = seatNum;
-      const p = db[seatNum];
-      const details = getSeatDetails(seatNum);
-
-      // Inteligencia logística: si está libre, sugerir de forma amigable el número de puesto correlativo correcto
-      if(!p) {
-        const nextLogico = getNextAvailableSeat();
-        if(nextLogico && nextLogico !== seatNum) {
-          if(!confirm(`Por logística de orden de llegada, corresponde vender primero el puesto #${nextLogico}.\n¿Aún así deseas forzar la venta en el puesto #${seatNum}?`)) {
-            return;
-          }
-        }
-      }
-
-      document.getElementById('lblModalTitle').textContent = p ? `Editar Puesto #${seatNum}` : `Vender Puesto #${seatNum}`;
-      document.getElementById('lblModalSub').textContent = `${details.desc} ${p ? '· Orden de Compra #' + p.order : '· Listo para asignar'}`;
-      
-      document.getElementById('txtNom').value = p ? p.name : '';
-      document.getElementById('txtCc').value = p ? (p.cc || '') : '';
-      document.getElementById('txtTel').value = p ? (p.tel || '') : '';
-      document.getElementById('txtMontoAbono').value = p ? (p.monto || '') : '';
-
-      setFormPay(p ? p.pay : 'none');
-
-      document.getElementById('btnDeleteSeat').style.display = p ? 'block' : 'none';
-      document.getElementById('modalForm').style.display = 'flex';
-    }
-
-    function closeModal() {
-      document.getElementById('modalForm').style.display = 'none';
-      currentSeatEditing = null;
-    }
-
-    function setFormPay(state) {
-      selectedPayState = state;
-      ['none', 'paid', 'abono'].forEach(s => {
-        document.getElementById(`pb-${s}`).className = `pay-btn p-${s} ${state === s ? 'selected' : ''}`;
-      });
-      document.getElementById('groupAbono').style.display = state === 'abono' ? 'block' : 'none';
-    }
-
-    function processSave() {
-      const name = document.getElementById('txtNom').value.trim();
-      if(!name) {
-        alert("Por favor ingresa el nombre del pasajero.");
-        return;
-      }
-
-      const cc = document.getElementById('txtCc').value.trim();
-      const tel = document.getElementById('txtTel').value.trim();
-      const monto = selectedPayState === 'abono' ? document.getElementById('txtMontoAbono').value.trim() : '';
-
-      // Si es nuevo registro, calcular el consecutivo en base a los existentes
-      let order = db[currentSeatEditing] ? db[currentSeatEditing].order : (Object.keys(db).length + 1);
-
-      db[currentSeatEditing] = { name, cc, tel, pay: selectedPayState, monto, order };
-      
-      saveData();
-      closeModal();
-      renderBus();
-      updateCounters();
-      if(document.getElementById('view-list').style.display === 'block') renderList();
-    }
-
-    function processDelete() {
-      if(confirm(`¿Estás seguro de desalojar el puesto #${currentSeatEditing}? Se liberará el espacio.`)) {
-        delete db[currentSeatEditing];
-        
-        // Re-calcular los números de órdenes de compra para mantener la coherencia perfecta de filas
-        let counter = 1;
-        Object.entries(db)
-          .sort((a, b) => a[1].order - b[1].order)
-          .forEach(([key, val]) => {
-            db[key].order = counter++;
-          });
-
-        saveData();
-        closeModal();
-        renderBus();
-        updateCounters();
-        renderList();
-      }
-    }
-
-    function filterList(filterType) {
-      activeFilter = filterType;
-      document.querySelectorAll('.filter-chip').forEach(c => c.className = 'filter-chip');
-      document.getElementById(`f-${filterType}`).className = 'filter-chip active';
-      renderList();
-    }
-
-    function renderList() {
-      const container = document.getElementById('passengerList');
-      const emptyState = document.getElementById('emptyState');
-      container.innerHTML = '';
-
-      // Organizar siempre por orden estricto de venta
-      let items = Object.entries(db).sort((a, b) => a[1].order - b[1].order);
-
-      if(activeFilter !== 'all') {
-        items = items.filter(([, p]) => p.pay === activeFilter);
-      }
-
-      if(items.length === 0) {
-        emptyState.style.display = 'block';
-        container.style.display = 'none';
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      container.style.display = 'flex';
-
-      items.forEach(([seatNum, p]) => {
-        const details = getSeatDetails(parseInt(seatNum));
-        
-        let badgeHtml = "";
-        if(p.pay === 'paid') badgeHtml = `<span class="badge-status bs-paid">Pagó Completo</span>`;
-        else if(p.pay === 'abono') badgeHtml = `<span class="badge-status bs-abono">Abonó $${parseInt(p.monto).toLocaleString('es-CO')}</span>`;
-        else badgeHtml = `<span class="badge-status bs-none">Sin Pago</span>`;
-
-        const card = document.createElement('div');
-        card.className = 'p-card';
-        card.innerHTML = `
-          <div class="p-order-badge" title="Orden de Compra">${p.order}</div>
-          <div class="p-main-info">
-            <div class="p-row1">${p.name} ${badgeHtml}</div>
-            <div class="p-row2">Puesto ${seatNum} · ${details.desc} ${p.cc ? '· CC: '+p.cc : ''} ${p.tel ? '· Cel: '+p.tel : ''}</div>
-          </div>
-          <button class="btn-action" onclick="openModal(${seatNum})" style="padding:6px;"><i class="ti ti-edit"></i></button>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    // Inicializar listeners pesados y de borrado general
-    document.getElementById('btnResetAll').onclick = () => {
-      if(confirm("⚠️ ¿ALERTA MAXIMA!\n¿Quieres borrar todos los pasajeros del bus? Esta acción vaciará por completo la base de datos de la peregrinación.")) {
-        if(confirm("¿Confirmas de verdad? Se perderán las cédulas, abonos y puestos.")) {
-          db = {};
-          saveData();
-          renderBus();
-          updateCounters();
-          renderList();
-        }
-      }
-    };
-
-    // Formateador y exportador nativo de listas optimizado para copiar y pegar directo en grupos de WhatsApp
-    document.getElementById('btnCopyList').onclick = () => {
-      const items = Object.entries(db).sort((a, b) => a[1].order - b[1].order);
-      if(items.length === 0) {
-        alert("Aún no tienes pasajeros registrados para exportar.");
-        return;
-      }
-
-      let text = `🛐 *PEREGRINACIÓN A MONSERRATE (BGA - BOG)* 🛐\n`;
-      text += `🚌 *Logística y Control de Asientos en Bus*\n`;
-      text += `──────────────────────\n\n`;
-
-      items.forEach(([seatNum, p]) => {
-        let statusText = "";
-        if(p.pay === 'paid') statusText = "✅ (Pago Completo)";
-        else if(p.pay === 'abono') statusText = `🔵 (Abonó $${parseInt(p.monto).toLocaleString('es-CO')})`;
-        else statusText = "⏳ (Sin Pago)";
-
-        text += `*#${p.order}* | *Puesto ${seatNum}* | ${p.name}\n`;
-        text += `   📱 ${p.tel ? p.tel : 'Sin número'} | ${statusText}\n\n`;
-      });
-
-      text += `──────────────────────\n`;
-      text += `📊 _Reporte generado automáticamente_`;
-
-      navigator.clipboard.writeText(text).then(() => {
-        alert("¡Lista estructurada copiada con éxito! Ya puedes ir a WhatsApp y pegarla en el grupo.");
-      }).catch(err => {
-        alert("Error al copiar. Por favor dale permiso al navegador.");
-      });
-    };
-
-    // Ejecución inicial automática al cargar el documento
-    loadData();
-    renderBus();
-    updateCounters();
-  </script>
-</body>
-</html>
+        seatBtn.innerHTML = `<sp
