@@ -70,6 +70,7 @@
       width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid #d4cbdc; background: #ffffff;
       font-size: 11px; font-weight: 600; color: var(--color-text-main); display: flex; flex-direction: column;
       align-items: center; justify-content: center; position: relative; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05);
+      cursor: pointer;
     }
     .seat .sname { font-size: 8px; font-weight: 400; max-width: 42px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 1px; }
 
@@ -107,8 +108,7 @@
     .bs-none { background: #f1f3f4; color: #5f6368; }
 
     .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
-    .modal-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); animation: zoomUp 0.2s ease-out; }
-    @keyframes zoomUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
 
     .m-title { font-size: 18px; font-weight: 600; color: var(--color-primary-dark); }
     .m-sub { font-size: 12px; color: var(--color-text-sec); margin-bottom: 14px; }
@@ -129,7 +129,7 @@
     .btn-main.secondary { background: #f1f3f4; color: var(--color-text-main); }
     
     .btn-delete-seat { width: 100%; padding: 10px; background: #fce8e6; color: #c5221f; border: none; border-radius: 10px; margin-top: 8px; font-size: 12px; font-weight: 500; cursor: pointer; }
-    .empty-state { text-align: center; padding: 30px; color: var(--color-text-sec); font-size: 13px; }
+    .empty-state { text-align: center; padding: 30px; color: var(--text-sec); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -143,7 +143,7 @@
         <div class="title"><i class="ti ti-flame"></i> Monserrate 2026</div>
         <div class="subtitle">Bucaramanga → Bogotá · 42 Puestos</div>
       </div>
-      <div class="sync-badge loading" id="syncStatus"><i class="ti ti-refresh animate-spin"></i> Conectando...</div>
+      <div class="sync-badge loading" id="syncStatus"><i class="ti ti-refresh"></i> Conectando...</div>
     </div>
 
     <div class="stats-grid">
@@ -250,61 +250,6 @@
     let selectedPayState = 'none';
     let activeFilter = 'all';
 
-    async function fetchAllSeats() {
-      showSyncState(true);
-      
-      // Siempre renderizar el mapa vacío para evitar que se quede colgada la pantalla
-      renderBus();
-      updateCounters();
-
-      const { data, error } = await _supabase.from('peregrinos').select('*');
-      if (error) {
-        console.error("Error cargando base de datos remota:", error);
-        showSyncState(false);
-        return;
-      }
-      
-      db = {};
-      if (data && data.length > 0) {
-        data.forEach(item => {
-          db[item.id] = {
-            name: item.name,
-            cc: item.cc,
-            tel: item.tel,
-            pay: item.pay,
-            monto: item.monto,
-            order: item.order
-          };
-        });
-      }
-      
-      // Volver a renderizar ya con los datos cargados de Supabase
-      renderBus();
-      updateCounters();
-      if(document.getElementById('view-list').style.display === 'block') renderList();
-      showSyncState(false);
-    }
-
-    function listenRealtime() {
-      _supabase
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'peregrinos' }, () => {
-          fetchAllSeats();
-        })
-        .subscribe();
-    }
-
-    function showSyncState(isLoading) {
-      const b = document.getElementById('syncStatus');
-      if(isLoading) {
-        b.className = "sync-badge loading";
-        b.innerHTML = `<i class="ti ti-refresh animate-spin"></i> Sincronizando...`;
-      } else {
-        b.className = "sync-badge";
-        b.innerHTML = `<i class="ti ti-cloud-check"></i> En Vivo`;
-      }
-    }
-
     function getSeatDetails(n) {
       if(n <= 40) {
         const fila = Math.ceil(n / 4);
@@ -335,6 +280,7 @@
       rowsContainer.innerHTML = '';
       backRowContainer.innerHTML = '';
 
+      // Renderizar filas 1 a 10 (asientos 1 al 40)
       for(let f = 1; f <= 10; f++) {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'bus-row';
@@ -366,7 +312,9 @@
         rowsContainer.appendChild(rowDiv);
       }
 
-      [41, 42].forEach((n, idx) => {
+      // Renderizar fila trasera (asientos 41 y 42) con espacios de pasillo corregidos
+      const backSeats = [41, 42];
+      backSeats.forEach((n, idx) => {
         if(idx === 1) {
           for(let k=0; k<3; k++) {
             const space = document.createElement('div');
@@ -404,6 +352,63 @@
       if(eAvail) eAvail.textContent = TOTAL_SEATS - totalSold;
       if(ePaid) ePaid.textContent = totalPaid;
       if(eAbono) eAbono.textContent = totalAbono;
+    }
+
+    async function fetchAllSeats() {
+      showSyncState(true);
+      
+      // Render inmediato para asegurar que el bus pinte de inmediato en pantalla
+      renderBus();
+      updateCounters();
+
+      try {
+        const { data, error } = await _supabase.from('peregrinos').select('*');
+        if (error) throw error;
+        
+        db = {};
+        if (data && data.length > 0) {
+          data.forEach(item => {
+            db[item.id] = {
+              name: item.name,
+              cc: item.cc,
+              tel: item.tel,
+              pay: item.pay,
+              monto: item.monto,
+              order: item.order
+            };
+          });
+        }
+        
+        renderBus();
+        updateCounters();
+        if(document.getElementById('view-list').style.display === 'block') renderList();
+        showSyncState(false);
+      } catch (err) {
+        console.error("Error conectando a Supabase:", err);
+        // Mantiene el croquis aunque falle el internet
+        showSyncState(false);
+      }
+    }
+
+    function listenRealtime() {
+      _supabase
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'peregrinos' }, () => {
+          fetchAllSeats();
+        })
+        .subscribe();
+    }
+
+    function showSyncState(isLoading) {
+      const b = document.getElementById('syncStatus');
+      if(!b) return;
+      if(isLoading) {
+        b.className = "sync-badge loading";
+        b.innerHTML = `<i class="ti ti-refresh"></i> Sincronizando...`;
+      } else {
+        b.className = "sync-badge";
+        b.innerHTML = `<i class="ti ti-cloud-check"></i> En Vivo`;
+      }
     }
 
     function changeTab(tab) {
@@ -446,7 +451,8 @@
     function setFormPay(state) {
       selectedPayState = state;
       ['none', 'paid', 'abono'].forEach(s => {
-        document.getElementById(`pb-${s}`).className = `pay-btn p-${s} ${state === s ? 'selected' : ''}`;
+        const btn = document.getElementById(`pb-${s}`);
+        if(btn) btn.className = `pay-btn p-${s} ${state === s ? 'selected' : ''}`;
       });
       document.getElementById('groupAbono').style.display = state === 'abono' ? 'block' : 'none';
     }
@@ -540,7 +546,7 @@
       const items = Object.entries(db).sort((a, b) => a[1].order - b[1].order);
       if(items.length === 0) { alert("No hay pasajeros."); return; }
 
-      let text = `🛐 *PEREGRINACIÓN A MONSERRATE (BGA - BOG)* 🛐\n🚌 *Logística y Control de Asientos*\n──────────────────────\n\n`;
+      let text = `幕 *PEREGRINACIÓN A MONSERRATE (BGA - BOG)* 幕\n🚌 *Logística y Control de Asientos*\n──────────────────────\n\n`;
       items.forEach(([seatNum, p]) => {
         let statusText = p.pay === 'paid' ? "✅ (Pago Completo)" : (p.pay === 'abono' ? `🔵 (Abonó $${parseInt(p.monto).toLocaleString('es-CO')})` : "⏳ (Sin Pago)");
         text += `*#${p.order}* | *Puesto ${seatNum}* | ${p.name}\n   📱 ${p.tel ? p.tel : 'Sin número'} | ${statusText}\n\n`;
@@ -552,7 +558,7 @@
       });
     };
 
-    // Inicio de la App
+    // Lanzar render inicial
     fetchAllSeats();
     listenRealtime();
   </script>
