@@ -531,6 +531,16 @@
       cursor: pointer;
     }
 
+    .btn-reset-all {
+      background: rgba(255, 232, 230, 0.2);
+      color: #ff9e9b;
+      border: 1px solid rgba(255, 76, 76, 0.4);
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
     .empty-state {
       text-align: center;
       padding: 30px;
@@ -550,6 +560,7 @@
         <div class="title"><i class="ti ti-flame"></i> Monserrate 2026</div>
         <div class="subtitle">Bucaramanga → Bogotá · 42 Puestos</div>
       </div>
+      <button class="btn-reset-all" id="btnResetAll"><i class="ti ti-refresh"></i> Reiniciar</button>
     </div>
 
     <div class="stats-grid">
@@ -667,6 +678,7 @@
     let selectedPayState = 'none';
     let activeFilter = 'all';
 
+    // Cargar información de memoria interna del celular
     function loadData() {
       try {
         const data = localStorage.getItem(LOCAL_KEY);
@@ -680,6 +692,7 @@
       localStorage.setItem(LOCAL_KEY, JSON.stringify(db));
     }
 
+    // Detallar textos de ubicación del bus según numeración colombiana estándar
     function getSeatDetails(n) {
       if(n <= 40) {
         const fila = Math.ceil(n / 4);
@@ -708,6 +721,7 @@
       rowsContainer.innerHTML = '';
       backRowContainer.innerHTML = '';
 
+      // Render de las primeras 10 filas de 4 puestos
       for(let f = 1; f <= 10; f++) {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'bus-row';
@@ -716,6 +730,7 @@
         const seatNumbers = [base + 1, base + 2, base + 3, base + 4];
 
         seatNumbers.forEach((n, idx) => {
+          // Generar el espacio de pasillo central en el índice 2
           if(idx === 2) {
             const aisle = document.createElement('div');
             aisle.className = 'aisle-space';
@@ -729,22 +744,4 @@
           if(p) {
             if(p.pay === 'paid') cssClass = 'seat s-paid';
             else if(p.pay === 'abono') cssClass = 'seat s-abono';
-            else cssClass = 'seat s-taken';
-          }
-
-          seatBtn.className = cssClass;
-          seatBtn.innerHTML = `<span class="snum">${n}</span>${p ? `<span class="sname">${p.name.split(' ')[0]}</span>` : ''}`;
-          seatBtn.onclick = () => openModal(n);
-          rowDiv.appendChild(seatBtn);
-        });
-
-        rowsContainer.appendChild(rowDiv);
-      }
-
-      [41, 42].forEach((n, idx) => {
-        if(idx === 1) {
-          for(let k=0; k<3; k++) {
-            const space = document.createElement('div');
-            space.className = 'aisle-space';
-            backRowContainer.appendChild(space);
-          }
+            else cssClass = 'seat s-
