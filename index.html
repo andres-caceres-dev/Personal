@@ -99,8 +99,9 @@
     .p-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #e8e3ed; }
     .p-order-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--color-bg-light); color: var(--color-primary); font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2dae8; }
     .p-main-info { flex: 1; }
-    .p-row1 { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .p-row1 { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .p-row2 { font-size: 11px; color: var(--color-text-sec); margin-top: 1px; }
+    .p-food { font-size: 11px; color: var(--color-primary); font-weight: 500; margin-top: 3px; }
 
     .badge-status { font-size: 9px; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
     .bs-paid { background: #e6f4ea; color: #137333; }
@@ -108,14 +109,16 @@
     .bs-none { background: #f1f3f4; color: #5f6368; }
 
     .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
-    .modal-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+    .modal-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 380px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
 
     .m-title { font-size: 18px; font-weight: 600; color: var(--color-primary-dark); }
     .m-sub { font-size: 12px; color: var(--color-text-sec); margin-bottom: 14px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--color-text-main); margin-bottom: 4px; }
-    .form-group input { width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; }
-    .form-group input:focus { border-color: var(--color-primary); }
+    .form-group input, .form-group select { width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; background: #fff; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--color-primary); }
+
+    .food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
     .pay-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .pay-btn { padding: 8px 4px; font-size: 12px; font-weight: 500; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; text-align: center; cursor: pointer; color: var(--color-text-sec); }
@@ -215,6 +218,27 @@
         <label>Celular</label>
         <input type="tel" id="txtTel" placeholder="Ej. 315XXXXXXX">
       </div>
+
+      <!-- NUEVOS CAMPOS DESPLEGABLES -->
+      <div class="food-grid">
+        <div class="form-group">
+          <label>Desayuno</label>
+          <select id="selDesayuno">
+            <option value="">-- Seleccionar --</option>
+            <option value="Caldo de carne">Caldo de carne</option>
+            <option value="Tamal">Tamal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Almuerzo</label>
+          <select id="selAlmuerzo">
+            <option value="">-- Seleccionar --</option>
+            <option value="Carne">Carne</option>
+            <option value="Pechuga">Pechuga</option>
+            <option value="Cerdo">Cerdo</option>
+          </select>
+        </div>
+      </div>
       
       <div class="form-group">
         <label>Estado del Pago</label>
@@ -312,7 +336,7 @@
         rowsContainer.appendChild(rowDiv);
       }
 
-      // Renderizar fila trasera (asientos 41 y 42) con espacios de pasillo corregidos
+      // Renderizar fila trasera (asientos 41 y 42)
       const backSeats = [41, 42];
       backSeats.forEach((n, idx) => {
         if(idx === 1) {
@@ -345,222 +369,4 @@
       const totalPaid = list.filter(x => x.pay === 'paid').length;
       const totalAbono = list.filter(x => x.pay === 'abono').length;
 
-      const eAvail = document.getElementById('txtAvail');
-      const ePaid = document.getElementById('txtPaid');
-      const eAbono = document.getElementById('txtAbono');
-
-      if(eAvail) eAvail.textContent = TOTAL_SEATS - totalSold;
-      if(ePaid) ePaid.textContent = totalPaid;
-      if(eAbono) eAbono.textContent = totalAbono;
-    }
-
-    async function fetchAllSeats() {
-      showSyncState(true);
-      
-      // Render inmediato para asegurar que el bus pinte de inmediato en pantalla
-      renderBus();
-      updateCounters();
-
-      try {
-        const { data, error } = await _supabase.from('peregrinos').select('*');
-        if (error) throw error;
-        
-        db = {};
-        if (data && data.length > 0) {
-          data.forEach(item => {
-            db[item.id] = {
-              name: item.name,
-              cc: item.cc,
-              tel: item.tel,
-              pay: item.pay,
-              monto: item.monto,
-              order: item.order
-            };
-          });
-        }
-        
-        renderBus();
-        updateCounters();
-        if(document.getElementById('view-list').style.display === 'block') renderList();
-        showSyncState(false);
-      } catch (err) {
-        console.error("Error conectando a Supabase:", err);
-        // Mantiene el croquis aunque falle el internet
-        showSyncState(false);
-      }
-    }
-
-    function listenRealtime() {
-      _supabase
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'peregrinos' }, () => {
-          fetchAllSeats();
-        })
-        .subscribe();
-    }
-
-    function showSyncState(isLoading) {
-      const b = document.getElementById('syncStatus');
-      if(!b) return;
-      if(isLoading) {
-        b.className = "sync-badge loading";
-        b.innerHTML = `<i class="ti ti-refresh"></i> Sincronizando...`;
-      } else {
-        b.className = "sync-badge";
-        b.innerHTML = `<i class="ti ti-cloud-check"></i> En Vivo`;
-      }
-    }
-
-    function changeTab(tab) {
-      document.getElementById('view-bus').style.display = tab === 'bus' ? 'block' : 'none';
-      document.getElementById('view-list').style.display = tab === 'list' ? 'block' : 'none';
-      document.getElementById('btn-tab-bus').className = `tab-btn ${tab === 'bus' ? 'active' : ''}`;
-      document.getElementById('btn-tab-list').className = `tab-btn ${tab === 'list' ? 'active' : ''}`;
-      if(tab === 'list') renderList();
-    }
-
-    function openModal(seatNum) {
-      currentSeatEditing = seatNum;
-      const p = db[seatNum];
-      const details = getSeatDetails(seatNum);
-
-      if(!p) {
-        const nextLogico = getNextAvailableSeat();
-        if(nextLogico && nextLogico !== seatNum) {
-          if(!confirm(`Por logística, corresponde vender primero el puesto #${nextLogico}.\n¿Deseas forzar el puesto #${seatNum}?`)) return;
-        }
-      }
-
-      document.getElementById('lblModalTitle').textContent = p ? `Editar Puesto #${seatNum}` : `Vender Puesto #${seatNum}`;
-      document.getElementById('lblModalSub').textContent = `${details.desc} ${p ? '· Orden #' + p.order : '· Listo'}`;
-      document.getElementById('txtNom').value = p ? p.name : '';
-      document.getElementById('txtCc').value = p ? (p.cc || '') : '';
-      document.getElementById('txtTel').value = p ? (p.tel || '') : '';
-      document.getElementById('txtMontoAbono').value = p ? (p.monto || '') : '';
-
-      setFormPay(p ? p.pay : 'none');
-      document.getElementById('btnDeleteSeat').style.display = p ? 'block' : 'none';
-      document.getElementById('modalForm').style.display = 'flex';
-    }
-
-    function closeModal() {
-      document.getElementById('modalForm').style.display = 'none';
-      currentSeatEditing = null;
-    }
-
-    function setFormPay(state) {
-      selectedPayState = state;
-      ['none', 'paid', 'abono'].forEach(s => {
-        const btn = document.getElementById(`pb-${s}`);
-        if(btn) btn.className = `pay-btn p-${s} ${state === s ? 'selected' : ''}`;
-      });
-      document.getElementById('groupAbono').style.display = state === 'abono' ? 'block' : 'none';
-    }
-
-    async function processSave() {
-      const name = document.getElementById('txtNom').value.trim();
-      if(!name) { alert("Ingresa el nombre del pasajero."); return; }
-
-      showSyncState(true);
-      const cc = document.getElementById('txtCc').value.trim();
-      const tel = document.getElementById('txtTel').value.trim();
-      const monto = selectedPayState === 'abono' ? document.getElementById('txtMontoAbono').value.trim() : '';
-      let order = db[currentSeatEditing] ? db[currentSeatEditing].order : (Object.keys(db).length + 1);
-
-      const { error } = await _supabase.from('peregrinos').upsert({
-        id: currentSeatEditing, name, cc, tel, pay: selectedPayState, monto, order
-      });
-
-      if(error) {
-        alert("Error al guardar en internet: " + error.message);
-      } else {
-        closeModal();
-        await fetchAllSeats();
-      }
-    }
-
-    async function processDelete() {
-      if(confirm(`¿Estás seguro de desalojar el puesto #${currentSeatEditing}?`)) {
-        showSyncState(true);
-        
-        const { error: delError } = await _supabase.from('peregrinos').delete().eq('id', currentSeatEditing);
-        if(delError) { alert("Error eliminando: " + delError.message); return; }
-
-        delete db[currentSeatEditing];
-        
-        let counter = 1;
-        const reorderPromises = Object.entries(db)
-          .sort((a, b) => a[1].order - b[1].order)
-          .map(([key, val]) => {
-            return _supabase.from('peregrinos').update({ order: counter++ }).eq('id', parseInt(key));
-          });
-
-        await Promise.all(reorderPromises);
-        closeModal();
-        await fetchAllSeats();
-      }
-    }
-
-    function filterList(filterType) {
-      activeFilter = filterType;
-      document.querySelectorAll('.filter-chip').forEach(c => c.className = 'filter-chip');
-      document.getElementById(`f-${filterType}`).className = 'filter-chip active';
-      renderList();
-    }
-
-    function renderList() {
-      const container = document.getElementById('passengerList');
-      const emptyState = document.getElementById('emptyState');
-      if(!container || !emptyState) return;
-      
-      container.innerHTML = '';
-
-      let items = Object.entries(db).sort((a, b) => a[1].order - b[1].order);
-      if(activeFilter !== 'all') items = items.filter(([, p]) => p.pay === activeFilter);
-
-      if(items.length === 0) {
-        emptyState.style.display = 'block'; container.style.display = 'none'; return;
-      }
-
-      emptyState.style.display = 'none'; container.style.display = 'flex';
-
-      items.forEach(([seatNum, p]) => {
-        const details = getSeatDetails(parseInt(seatNum));
-        let badgeHtml = p.pay === 'paid' ? `<span class="badge-status bs-paid">Pagó Completo</span>` : (p.pay === 'abono' ? `<span class="badge-status bs-abono">Abonó $${parseInt(p.monto).toLocaleString('es-CO')}</span>` : `<span class="badge-status bs-none">Sin Pago</span>`);
-
-        const card = document.createElement('div');
-        card.className = 'p-card';
-        card.innerHTML = `
-          <div class="p-order-badge">${p.order}</div>
-          <div class="p-main-info">
-            <div class="p-row1">${p.name} ${badgeHtml}</div>
-            <div class="p-row2">Puesto ${seatNum} · ${details.desc} ${p.cc ? '· CC: '+p.cc : ''} ${p.tel ? '· Cel: '+p.tel : ''}</div>
-          </div>
-          <button class="btn-action" onclick="openModal(${seatNum})" style="padding:6px;"><i class="ti ti-edit"></i></button>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    document.getElementById('btnCopyList').onclick = () => {
-      const items = Object.entries(db).sort((a, b) => a[1].order - b[1].order);
-      if(items.length === 0) { alert("No hay pasajeros."); return; }
-
-      let text = `幕 *PEREGRINACIÓN A MONSERRATE (BGA - BOG)* 幕\n🚌 *Logística y Control de Asientos*\n──────────────────────\n\n`;
-      items.forEach(([seatNum, p]) => {
-        let statusText = p.pay === 'paid' ? "✅ (Pago Completo)" : (p.pay === 'abono' ? `🔵 (Abonó $${parseInt(p.monto).toLocaleString('es-CO')})` : "⏳ (Sin Pago)");
-        text += `*#${p.order}* | *Puesto ${seatNum}* | ${p.name}\n   📱 ${p.tel ? p.tel : 'Sin número'} | ${statusText}\n\n`;
-      });
-      text += `──────────────────────\n📊 _Sincronizado en tiempo real_`;
-
-      navigator.clipboard.writeText(text).then(() => {
-        alert("¡Lista copiada! Ya puedes pegarla en WhatsApp.");
-      });
-    };
-
-    // Lanzar render inicial
-    fetchAllSeats();
-    listenRealtime();
-  </script>
-</body>
-</html>
+      const eAvai
